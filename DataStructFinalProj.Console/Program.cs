@@ -1,2 +1,10 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿using DataStructFinalProj.Logic;
+
+var game = new GameRunner();
+
+game.inventory.DisplayInventory();
+game.PressAnyKeyToContinue();
+game.inventory.ProcessNextItem();
+game.PressAnyKeyToContinue();
+game.inventory.DisplayInventory();
+game.PressAnyKeyToContinue();
