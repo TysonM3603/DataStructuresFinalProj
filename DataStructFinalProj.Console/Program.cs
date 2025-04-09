@@ -8,3 +8,5 @@ game.inventory.ProcessNextItem();
 game.PressAnyKeyToContinue();
 game.inventory.DisplayInventory();
 game.PressAnyKeyToContinue();
+
+game.DisplayPlayerStats(game.player);
