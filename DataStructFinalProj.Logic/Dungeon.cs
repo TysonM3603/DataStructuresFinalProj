@@ -1,5 +1,23 @@
 ﻿namespace DataStructFinalProj.Logic;
 
+public class DungeonEdge
+{
+   public string Destination { get; }
+   public int? RequiredStrength { get; set; }
+   public int? RequiredAgility { get; set; }
+   public int? RequiredIntelligence { get; set; }
+   public string? RequiredItem { get; set; }
+
+   public DungeonEdge(string dest, int? requiredStrength = null, int? requiredAgility = null, int? requiredIntelligence = null, string? requiredItem = null)
+   {
+      Destination = dest;
+      RequiredStrength = requiredStrength;
+      RequiredAgility = requiredAgility;
+      RequiredIntelligence = requiredIntelligence;
+      RequiredItem = requiredItem;
+   }
+}
+
 public class DungeonGraph
 {
    public Dictionary<string, List<DungeonEdge>> Graph { get; set; }
@@ -11,120 +29,145 @@ public class DungeonGraph
 
    public void AddRoom(string name)
    {
-      if (Graph.ContainsKey(name))
-      {
-         Console.WriteLine($"{name} already exists.");
-         return;
-      }
-
-      Graph[name] = new List<DungeonEdge>();
-      Console.WriteLine($"{name} has been added.");
-   }
-
-   public void RemoveRoom(string name)
-   {
       if (!Graph.ContainsKey(name))
       {
-         Console.WriteLine($"{name} does not exist.");
-         return;
+         Graph[name] = new List<DungeonEdge>();
       }
-
-      foreach (var room in Graph.Keys.ToList())
-      {
-         Graph[room].RemoveAll(e => e.Destination == name);
-      }
-
-      Graph.Remove(name);
-      Console.WriteLine($"{name} has been removed from the Graph.");
    }
 
    public void AddPath(string fromRoom, DungeonEdge toRoom)
    {
-      if (!DoesRoomsExist(fromRoom))
+      if (Graph.ContainsKey(fromRoom) && Graph.ContainsKey(toRoom.Destination))
       {
-         Console.WriteLine($"Room {fromRoom} doesn't exist.");
-         return;
+         if (!Graph[fromRoom].Any(e => e.Destination == toRoom.Destination))
+         {
+            Graph[fromRoom].Add(toRoom);
+         }
       }
-
-      if (Graph[fromRoom].Any(e => e.Destination == toRoom.Destination))
-      {
-         Console.WriteLine($"Path from {fromRoom} to {toRoom.Destination} already exists.");
-         return;
-      }
-
-      Graph[fromRoom].Add(toRoom);
-      Console.WriteLine($"Path from {fromRoom} to {toRoom.Destination} added.");
    }
-
-   public void RemovePath(string fromRoom, string toRoom)
-   {
-      if (!DoesRoomsExist(fromRoom) || !DoesRoomsExist(toRoom))
-      {
-         Console.WriteLine($"One or both rooms do not exist.");
-         return;
-      }
-
-      if (!Graph[fromRoom].Any(e => e.Destination == toRoom))
-      {
-         Console.WriteLine($"No paths exist there.");
-         return;
-      }
-
-      Graph[fromRoom].RemoveAll(e => e.Destination == toRoom);
-      Console.WriteLine($"Removed {fromRoom} to {toRoom}");
-   }
-
-   private bool DoesRoomsExist(string room) => Graph.ContainsKey(room);
 
    public bool DepthFirstSearchRecursive(string current, string target, HashSet<string> visited, List<string> path)
    {
-      path.Add(current);
       visited.Add(current);
+      path.Add(current);
 
-      // Base case
       if (current == target)
       {
          return true;
       }
 
-      path.Remove(current);
+      foreach (var edge in Graph[current])
+      {
+         if (!visited.Contains(edge.Destination))
+         {
+            if (DepthFirstSearchRecursive(edge.Destination, target, visited, path))
+            {
+               return true;
+            }
+         }
+      }
+
+      path.RemoveAt(path.Count - 1); // Backtrack
       return false;
    }
 
-   public void SetupDungeon()
+   public void SetupDungeonRandomized()
    {
-      string[] rooms = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K" };
-      foreach (string room in rooms)
+      Random rng = new Random();
+
+      // Create 15 rooms (can be changed for larger dungeon)
+      for (int i = 1; i <= 15; i++)
       {
-         AddRoom(room);
+         AddRoom(i.ToString());
       }
 
-      AddPath("A", new DungeonEdge("B", 2));
-      AddPath("A", new DungeonEdge("C", 4));
-      AddPath("B", new DungeonEdge("D", 1));
-      AddPath("B", new DungeonEdge("E", 3));
-      AddPath("C", new DungeonEdge("D", 2));
-      AddPath("C", new DungeonEdge("F", 3));
-      AddPath("D", new DungeonEdge("G", 4));
-      AddPath("D", new DungeonEdge("H", 5));
-      AddPath("E", new DungeonEdge("H", 2));
-      AddPath("E", new DungeonEdge("B", 3)); // Cycle
-      AddPath("F", new DungeonEdge("I", 2));
-      AddPath("G", new DungeonEdge("J", 6));
-      AddPath("H", new DungeonEdge("J", 3));
-      AddPath("I", new DungeonEdge("J", 1));
-      AddPath("F", new DungeonEdge("K", 3));
+      // Generate one guaranteed path (10–15 rooms long) to exit
+      int pathLength = rng.Next(10, 16); // 10 to 15 rooms
+      List<string> path = Enumerable.Range(1, 15).Select(i => i.ToString()).OrderBy(x => rng.Next()).Take(pathLength).ToList();
+
+      for (int i = 0; i < path.Count - 1; i++)
+      {
+         AddPath(path[i], GenerateRandomEdge(path[i + 1], rng));
+      }
+
+      // Add extra random paths (optional edges)
+      int extraEdges = rng.Next(10, 20);
+      List<string> roomList = Graph.Keys.ToList();
+
+      for (int i = 0; i < extraEdges; i++)
+      {
+         string from = roomList[rng.Next(roomList.Count)];
+         string to = roomList[rng.Next(roomList.Count)];
+         if (from != to && !Graph[from].Any(e => e.Destination == to))
+         {
+            AddPath(from, GenerateRandomEdge(to, rng));
+         }
+      }
+      Console.WriteLine($"Random dungeon generated with a guaranteed path of length {path.Count}.");
    }
-}
 
-public class DungeonEdge
-{
-   public string Destination { get; }
-   public int Distance { get; }
-
-   public DungeonEdge(string dest, int distance)
+   private DungeonEdge GenerateRandomEdge(string destination, Random rng)
    {
-      Destination = dest;
-      Distance = distance;
+      // 30% chance to require a stat, 30% chance to require an item, 40% chance for no requirement
+      int roll = rng.Next(100);
+      if (roll < 30)
+      {
+         // 30% chance to require Strength stat, 30% chance to require Agility stat, 30% chance to require Intelligence stat, 10% chance to require all three stats
+         roll = rng.Next(100);
+         if (roll < 30)
+         {
+            int requiredStrength = rng.Next(5, 11); // Strength 5–10
+            return new DungeonEdge(destination, requiredStrength: requiredStrength);
+         }
+         else if (roll >= 30 && roll < 60)
+         {
+            int requiredAgility = rng.Next(5, 11); // Agility 5-10
+            return new DungeonEdge(destination, requiredAgility: requiredAgility);
+         }
+         else if (roll >= 60 && roll < 90)
+         {
+            int requiredIntelligence = rng.Next(5, 11); // Intelligence 5-10
+            return new DungeonEdge(destination, requiredIntelligence: requiredIntelligence);
+         }
+         else
+         {
+            int requiredStrength = rng.Next(5, 11); // Strength 5–10
+            int requiredAgility = rng.Next(5, 11); // Agility 5-10
+            int requiredIntelligence = rng.Next(5, 11); // Intelligence 5-10
+            return new DungeonEdge(destination, requiredStrength: requiredStrength, requiredAgility: requiredAgility, requiredIntelligence: requiredIntelligence);
+         }
+      }
+      else if (roll < 60)
+      {
+         string[] items = { "Lockpick", "MagicKey", "Torch", "GrapplingHook" };
+         string item = items[rng.Next(items.Length)];
+         return new DungeonEdge(destination, requiredItem: item);
+      }
+      else
+      {
+         return new DungeonEdge(destination); // No requirement
+      }
+   }
+
+   // A utility to verify path exists from start to exit
+   public bool IsPathToExit(string start, string exit)
+   {
+      var visited = new HashSet<string>();
+      var path = new List<string>();
+      return DepthFirstSearchRecursive(start, exit, visited, path);
+   }
+
+   public void PrintPathToExit(string start, string exit)
+   {
+      var visited = new HashSet<string>();
+      var path = new List<string>();
+      if (DepthFirstSearchRecursive(start, exit, visited, path))
+      {
+         Console.WriteLine($"Path from {start} to {exit}: {string.Join(" -> ", path)}");
+      }
+      else
+      {
+         Console.WriteLine($"No path found from {start} to {exit}.");
+      }
    }
 }

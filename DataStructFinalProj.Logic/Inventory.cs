@@ -3,28 +3,36 @@ namespace DataStructFinalProj.Logic;
 public class Inventory
 {
    private Queue<InventoryItem> inventory = new Queue<InventoryItem>();
+   private Player player;
 
-   public void AddItem(InventoryItem item)
+   public Inventory(Player player)
+   {
+      this.player = player;
+   }
+
+
+   public void AddItem(InventoryItem item, Player player)
    {
       if (inventory.Count >= 5)
       {
-         ProcessNextItem();
+         ProcessNextItem(player);
       }
       inventory.Enqueue(item);
+      InventoryStatCheck(player); // update stats after adding
    }
 
-   public void AddNewItem(string name, string type, int strength, int agility, int intelligence, int quantity)
+   public void AddNewItem(string name, string type, int strength, int agility, int intelligence, Player player)
    {
       if (inventory.Count >= 5)
       {
-         ProcessNextItem();
+         ProcessNextItem(player);
       }
-      InventoryItem item = new InventoryItem(name, type, strength, agility, intelligence, quantity);
+      InventoryItem item = new InventoryItem(name, type, strength, agility, intelligence);
       inventory.Enqueue(item);
-      // Console.WriteLine($"Added {item.Quantity} {item.Name} to inventory."); //This is used to test to ensure Items are added to the inventory
+      InventoryStatCheck(player);
    }
 
-   public void ProcessNextItem()
+   public void ProcessNextItem(Player player)
    {
       if (inventory.Count == 0)
       {
@@ -32,9 +40,11 @@ public class Inventory
          return;
       }
 
-      // var ItemToBeRemoved = inventory.Peek();
       InventoryItem oldestItem = inventory.Dequeue();
-      Console.WriteLine($"{oldestItem.Name} was removed to make space for a new item.");
+      Console.WriteLine($"{oldestItem.Name} was removed.");
+
+      // Update player stats after the item is removed
+      InventoryStatCheck(player);
    }
 
    public void DisplayInventory()
@@ -48,47 +58,31 @@ public class Inventory
       Console.WriteLine("Inventory:");
       foreach (var item in inventory)
       {
-         Console.WriteLine($"- {item.Name}, Quantity: {item.Quantity}, Type: {item.Type}, Strength: {item.Strength}, Agility: {item.Agility}, Intelligence: {item.Intelligence}");
+         Console.WriteLine($"- {item.Name}, Type: {item.Type}, Strength: {item.Strength}, Agility: {item.Agility}, Intelligence: {item.Intelligence}");
       }
    }
 
-   public void InventoryStatCheck(Player player, InventoryItem item)
+   public void InventoryStatCheck(Player player)
    {
-      if (inventory.Contains(item))
+      player.Strength = 1;
+      player.Agility = 1;
+      player.Intelligence = 1;
+
+      foreach (var i in inventory)
       {
-         if (item.Strength > 0)
+         if (i.Strength > 0)
          {
-            player.Strength += item.Strength;
+            player.Strength += i.Strength;
          }
 
-         if (item.Agility > 0)
+         if (i.Agility > 0)
          {
-            player.Agility += item.Agility;
+            player.Agility += i.Agility;
          }
 
-         if (item.Intelligence > 0)
+         if (i.Intelligence > 0)
          {
-            player.Intelligence += item.Intelligence;
-         }
-      }
-      else
-      {
-         player.Strength -= item.Strength;
-         if (player.Strength < 1)
-         {
-            player.Strength = 1;
-         }
-
-         player.Agility -= item.Agility;
-         if (player.Agility < 1)
-         {
-            player.Agility = 1;
-         }
-
-         player.Intelligence -= item.Intelligence;
-         if (player.Intelligence < 1)
-         {
-            player.Intelligence = 1;
+            player.Intelligence += i.Intelligence;
          }
       }
    }
@@ -101,15 +95,13 @@ public class InventoryItem
    public int Strength { get; set; }
    public int Agility { get; set; }
    public int Intelligence { get; set; }
-   public int Quantity { get; set; }
 
-   public InventoryItem(string name, string type, int strength, int agility, int intelligence, int quantity)
+   public InventoryItem(string name, string type, int strength, int agility, int intelligence)
    {
       this.Name = name;
       this.Type = type;
       this.Strength = strength;
       this.Agility = agility;
       this.Intelligence = intelligence;
-      this.Quantity = quantity;
    }
 }
