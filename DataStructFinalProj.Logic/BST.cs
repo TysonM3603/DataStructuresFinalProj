@@ -1,401 +1,298 @@
-// namespace DataStructFinalProj.Logic;
+using System;
+using System.Collections.Generic;
 
-// public class BinarySearchTree
-// {
-//    public Node? RootNode { get; set; }
-//    public int DepthCounter { get; set; }
+namespace DataStructFinalProj.Logic
+{
+   public class Challenge
+   {
+      public string Type { get; set; }
+      public int Difficulty { get; set; }
+      public string RequiredStat { get; set; }
+      public int RequiredValue { get; set; }
+      public string? RequiredItem { get; set; }
 
-//    public BinarySearchTree()
-//    {
-//       RootNode = null;
-//    }
+      public Challenge(string type, int difficulty, string requiredStat, int requiredValue, string? requiredItem = null)
+      {
+         Type = type;
+         Difficulty = difficulty;
+         RequiredStat = requiredStat;
+         RequiredValue = requiredValue;
+         RequiredItem = requiredItem;
+      }
+   }
 
-//    public void Insert(int data)
-//    {
-//       RootNode = InsertNode(RootNode, data);
-//    }
+   public class Node
+   {
+      public Challenge Challenge { get; set; }
+      public Node? Left { get; set; }
+      public Node? Right { get; set; }
 
-//    public Node InsertNode(Node node, int data)
-//    {
-//       if (node == null)
-//       {
-//          return new Node(data);
-//       }
+      public Node(Challenge challenge)
+      {
+         Challenge = challenge;
+         Left = null;
+         Right = null;
+      }
+   }
 
-//       if (data < node.Data)
-//       {
-//          node.Left = InsertNode(node.Left, data);
-//       }
-//       else if (data > node.Data)
-//       {
-//          node.Right = InsertNode(node.Right, data);
-//       }
+   public class BinarySearchTree
+   {
+      public Node? RootNode { get; set; }
+      public Stack<int> RoomStack = new();
+      public Dictionary<int, Challenge> RoomChallengeMap = new();
 
-//       return node;
-//    }
+      public void Insert(Challenge challenge)
+      {
+         RootNode = InsertNode(RootNode, challenge);
+         RoomChallengeMap[challenge.Difficulty] = challenge;
+      }
 
-//    public void InsertIteratively(int data)
-//    {
-//       if (RootNode == null)
-//       {
-//          RootNode = new Node(data);
-//          return;
-//       }
+      private Node InsertNode(Node? node, Challenge challenge)
+      {
+         if (node == null)
+         {
+            return new Node(challenge);
+         }
 
-//       Node current = RootNode;
-//       while (true)
-//       {
-//          if (data < current.Data)
-//          {
-//             if (current.Left == null)
-//             {
-//                current.Left = new Node(data);
-//                return;
-//             }
-//             current = current.Left;
-//          }
-//          else if (data > current.Data)
-//          {
-//             if (current.Right == null)
-//             {
-//                current.Right = new Node(data);
-//                return;
-//             }
-//             current = current.Right;
-//          }
-//          else
-//          {
-//             return;
-//          }
-//       }
-//    }
+         if (challenge.Difficulty < node.Challenge.Difficulty)
+         {
+            node.Left = InsertNode(node.Left, challenge);
+         }
+         else if (challenge.Difficulty > node.Challenge.Difficulty)
+         {
+            node.Right = InsertNode(node.Right, challenge);
+         }
+         return node;
+      }
 
-//    public void DeleteNode(Node target)
-//    {
-//       DeleteNode(target.Data);
-//    }
+      public Challenge? FindClosestChallenge(int roomNumber)
+      {
+         return FindClosestChallenge(RootNode, roomNumber, null);
+      }
 
-//    public void DeleteNode(int target)
-//    {
-//       RootNode = DeleteNode(RootNode, target);
-//    }
+      private Challenge? FindClosestChallenge(Node? node, int target, Challenge? closest)
+      {
+         if (node == null)
+         {
+            return closest;
+         }
 
-//    public Node? DeleteNode(Node currentNode, int target)
-//    {
-//       if (currentNode == null)
-//       {
-//          return currentNode;
-//       }
+         if (closest == null || Math.Abs(node.Challenge.Difficulty - target) < Math.Abs(closest.Difficulty - target))
+         {
+            closest = node.Challenge;
+         }
 
-//       if (target < currentNode.Data)
-//       {
-//          currentNode.Left = DeleteNode(currentNode.Left, target); //search left
-//       }
-//       else if (target > currentNode.Data)
-//       {
-//          currentNode.Right = DeleteNode(currentNode.Right, target); //search right
-//       }
-//       else
-//       {
-//          //Found the number
+         if (target < node.Challenge.Difficulty)
+         {
+            return FindClosestChallenge(node.Left, target, closest);
+         }
+         else if (target > node.Challenge.Difficulty)
+         {
+            return FindClosestChallenge(node.Right, target, closest);
+         }
+         else
+         {
+            return node.Challenge;
+         }
+      }
 
-//          //Leaf
-//          if (currentNode.Left == null && currentNode.Right == null)
-//          {
-//             return null;
-//          }
+      public bool AttemptChallenge(Challenge challenge, Player player, Inventory playerItems)
+      {
+         if (challenge.RequiredItem != null && !playerItems.Contains(challenge.RequiredItem))
+         {
+            Console.WriteLine("Missing required item!");
+            player.Health -= challenge.RequiredValue;
+            return false;
+         }
 
-//          // 1 Child
-//          if (currentNode.Left == null || currentNode.Right == null)
-//          {
-//             //Node? result = currentNode.Left == null ? currentNode.Right : currentNode.Left;
-//             return currentNode.Left == null ? currentNode.Right : currentNode.Left;
-//          }
+         int playerValue = challenge.RequiredStat
+         switch
+         {
+            "Strength" => player.Strength,
+            "Agility" => player.Agility,
+            "Intelligence" => player.Intelligence,
+            _ => 0
+         };
 
-//          // 2 Children
-//          currentNode.Data = GetMinValue(currentNode.Right);
-//          currentNode.Right = DeleteNode(currentNode.Right, currentNode.Data);
-//       }
-//       return currentNode;
-//    }
+         if (playerValue >= challenge.RequiredValue)
+         {
+            Console.WriteLine("Challenge succeeded!");
+            DeleteNode(challenge.Difficulty);
+            RoomChallengeMap.Remove(challenge.Difficulty);
+            RebalanceTree();
+            return true;
+         }
+         else
+         {
+            int damage = challenge.RequiredValue - playerValue;
+            Console.WriteLine($"Challenge failed! Took {damage} damage.");
+            player.Health -= damage;
+            return false;
+         }
+      }
 
-//    public void Balanced()
-//    {
-//       if (IsBalanced() == true)
-//       {
-//          Console.WriteLine("The tree is balanced.");
-//       }
-//       else
-//       {
-//          Console.WriteLine("The tree is not balanced.");
-//          Console.WriteLine("Rebalancing inventory tree...");
-//          RebalanceTree();
-//          Balanced();
-//       }
-//    }
+      public void DeleteNode(int difficulty)
+      {
+         RootNode = DeleteNode(RootNode, difficulty);
+      }
 
-//    public bool IsBalanced()
-//    {
-//       return CheckHeight(RootNode) != -1;
-//    }
+      private Node? DeleteNode(Node? node, int target)
+      {
+         if (node == null)
+         {
+            return null;
+         }
 
-//    public int CheckHeight(Node? node)
-//    {
-//       if (node == null)
-//       {
-//          return 0;
-//       }
+         if (target < node.Challenge.Difficulty)
+         {
+            node.Left = DeleteNode(node.Left, target);
+         }
+         else if (target > node.Challenge.Difficulty)
+         {
+            node.Right = DeleteNode(node.Right, target);
+         }
+         else
+         {
+            if (node.Left == null && node.Right == null)
+            {
+               return null;
+            }
+            if (node.Left == null || node.Right == null)
+            {
+               return node.Left ?? node.Right;
+            }
+            Challenge successor = GetMinValue(node.Right);
+            node.Challenge = successor;
+            node.Right = DeleteNode(node.Right, successor.Difficulty);
+         }
+         return node;
+      }
 
-//       int leftHeight = CheckHeight(node.Left);
-//       if (leftHeight == -1)
-//       {
-//          return -1;
-//       }
+      private Challenge GetMinValue(Node node)
+      {
+         while (node.Left != null)
+         {
+            node = node.Left;
+         }
+         return node.Challenge;
+      }
 
-//       int rightHeight = CheckHeight(node.Right);
-//       if (rightHeight == -1)
-//       {
-//          return -1;
-//       }
+      public void RebalanceTree()
+      {
+         List<Challenge> sorted = new();
+         InOrderTraversal(RootNode, sorted);
+         RootNode = BuildBalancedTree(sorted, 0, sorted.Count - 1);
+      }
 
-//       if (Math.Abs(leftHeight - rightHeight) > 1)
-//       {
-//          return -1;
-//       }
+      private void InOrderTraversal(Node? node, List<Challenge> list)
+      {
+         if (node == null)
+         {
+            return;
+         }
+         InOrderTraversal(node.Left, list);
+         list.Add(node.Challenge);
+         InOrderTraversal(node.Right, list);
+      }
 
-//       return Math.Max(leftHeight, rightHeight) + 1;
-//    }
+      private Node? BuildBalancedTree(List<Challenge> list, int start, int end)
+      {
+         if (start > end)
+         {
+            return null;
+         }
+         int mid = (start + end) / 2;
+         Node node = new(new Challenge(
+             list[mid].Type,
+             list[mid].Difficulty,
+             list[mid].RequiredStat,
+             list[mid].RequiredValue,
+             list[mid].RequiredItem));
+         node.Left = BuildBalancedTree(list, start, mid - 1);
+         node.Right = BuildBalancedTree(list, mid + 1, end);
+         return node;
+      }
 
-//    public void InOrderTraversal(List<InventoryItem> inventoryItems)
-//    {
-//       InOrderTraversal(RootNode, inventoryItems);
-//    }
+      public void TraverseDungeonWithChallenges(DungeonGraph dungeon, string startRoom, string exitRoom, Player player, Inventory playerItems)
+      {
+         Stack<string> pathStack = new Stack<string>();
+         HashSet<string> visited = new HashSet<string>();
 
-//    public void InOrderTraversal(Node? node, List<InventoryItem> Items)
-//    {
-//       if (node == null)
-//       {
-//          return;
-//       }
+         pathStack.Push(startRoom);
 
-//       InOrderTraversal(node.Left, Items);
-//       for (int i = 0; i < Items.Count; i++)
-//       {
-//          if (Items[i].ID == node.Data)
-//          {
-//             Console.WriteLine($"Item ID: {Items[i].ID}; Item Name: {Items[i].Name}; Item Type: {Items[i].Type}; Item Rarity: {Items[i].Rarity}; Item Strength: {Items[i].Strength};");
-//          }
-//       }
-//       InOrderTraversal(node.Right, Items);
-//    }
+         while (pathStack.Count > 0)
+         {
+            string currentRoom = pathStack.Peek();
+            if (!visited.Contains(currentRoom))
+            {
+               Console.WriteLine($"\nEntered Room {currentRoom}");
+               visited.Add(currentRoom);
 
-//    public void DescendingOrder()
-//    {
-//       DescendingOrder(RootNode);
-//    }
-//    public void DescendingOrder(Node? node)
-//    {
-//       if (node == null)
-//       {
-//          return;
-//       }
+               if (int.TryParse(currentRoom, out int roomNumber))
+               {
+                  var challenge = FindClosestChallenge(roomNumber);
+                  if (challenge != null)
+                  {
+                     Console.WriteLine($"Facing Challenge: {challenge.Type} | Difficulty {challenge.Difficulty}");
+                     AttemptChallenge(challenge, player, playerItems);
+                  }
+               }
 
-//       DescendingOrder(node.Right);
-//       Console.WriteLine(node.Data);
-//       DescendingOrder(node.Left);
-//    }
+               if (currentRoom == exitRoom)
+               {
+                  Console.WriteLine("Exit found! Dungeon traversal complete.");
+                  return;
+               }
+            }
 
-//    public void PostOrderTraversal()
-//    {
-//       PostOrderTraversal(RootNode);
-//    }
-//    public void PostOrderTraversal(Node? node)
-//    {
-//       if (node == null)
-//       {
-//          return;
-//       }
+            bool moved = false;
+            foreach (var edge in dungeon.Graph[currentRoom])
+            {
+               if (!visited.Contains(edge.Destination) && CanTraverseEdge(edge, player, playerItems))
+               {
+                  pathStack.Push(edge.Destination);
+                  moved = true;
+                  break;
+               }
+            }
 
-//       PostOrderTraversal(node.Left);
-//       PostOrderTraversal(node.Right);
-//       Console.WriteLine(node.Data);
-//    }
+            if (!moved)
+            {
+               Console.WriteLine($"Dead end at Room {currentRoom}. Backtracking...");
+               pathStack.Pop();
+            }
 
-//    public void PreOrderTraversal()
-//    {
-//       PreOrderTraversal(RootNode);
-//    }
-//    public void PreOrderTraversal(Node? node)
-//    {
-//       if (node == null)
-//       {
-//          return;
-//       }
+            if (player.Health <= 0)
+            {
+               Console.WriteLine("Player has died in the dungeon.");
+               return;
+            }
+         }
+         Console.WriteLine("No path to exit found.");
+      }
 
-//       Console.WriteLine(node.Data);
-//       PreOrderTraversal(node.Left);
-//       PreOrderTraversal(node.Right);
-//    }
+      private bool CanTraverseEdge(DungeonEdge edge, Player player, Inventory items)
+      {
+         if (edge.RequiredItem != null && !items.Contains(edge.RequiredItem))
+         {
+            return false;
+         }
 
-//    public void LevelOrderTraversal()
-//    {
-//       if (RootNode == null)
-//       {
-//          return;
-//       }
+         if (edge.RequiredStrength.HasValue && player.Strength < edge.RequiredStrength.Value)
+         {
+            return false;
+         }
 
-//       Queue<Node> queue = new Queue<Node>();
-//       queue.Enqueue(RootNode);
+         if (edge.RequiredAgility.HasValue && player.Agility < edge.RequiredAgility.Value)
+         {
+            return false;
+         }
 
-//       while (queue.Count > 0)
-//       {
-//          Node current = queue.Dequeue();
-//          Console.WriteLine(current.Data);
-
-//          if (current.Left != null)
-//          {
-//             queue.Enqueue(current.Left);
-//          }
-//          if (current.Right != null)
-//          {
-//             queue.Enqueue(current.Right);
-//          }
-//       }
-//    }
-
-//    public bool Search(int target)
-//    {
-//       int closest = int.MaxValue;
-//       bool found = SearchRecursiveWithClosest(RootNode, target, ref closest);
-
-//       if (!found)
-//       {
-//          Console.WriteLine($"Item with ID {target} not found.");
-//          if (closest != int.MaxValue)
-//          {
-//             Console.WriteLine($"Did you mean ID {closest}?");
-//          }
-//       }
-//       return found;
-//    }
-
-//    private bool SearchRecursiveWithClosest(Node? node, int target, ref int closest)
-//    {
-//       if (node == null)
-//       {
-//          return false;
-//       }
-
-//       DepthCounter++;
-
-//       if (Math.Abs(node.Data - target) < Math.Abs(closest - target))
-//       {
-//          closest = node.Data;
-//       }
-
-//       if (target == node.Data)
-//       {
-//          return true;
-//       }
-//       else if (target < node.Data)
-//       {
-//          return SearchRecursiveWithClosest(node.Left, target, ref closest);
-//       }
-//       else
-//       {
-//          return SearchRecursiveWithClosest(node.Right, target, ref closest);
-//       }
-//    }
-
-
-//    public int GetMinValue(Node? currentNode)
-//    {
-//       if (currentNode == null)
-//       {
-//          throw new ArgumentNullException(nameof(currentNode), "Tree is empty.");
-//       }
-
-//       while (currentNode.Left != null)
-//       {
-//          currentNode = currentNode.Left;
-//       }
-
-//       return currentNode.Data;
-//    }
-
-//    public int GetMaxValue()
-//    {
-//       Node result = RootNode;
-
-//       while (result.Right != null)
-//       {
-//          result = result.Right;
-//       }
-//       return result.Data;
-//    }
-
-//    public void RebalanceTree()
-//    {
-//       List<int> sortedNodes = new List<int>();
-//       StoreInOrder(RootNode, sortedNodes);
-//       RootNode = BuildAVLTree(sortedNodes, 0, sortedNodes.Count - 1);
-//    }
-
-//    private void StoreInOrder(Node? node, List<int> nodes)
-//    {
-//       if (node == null)
-//          return;
-//       StoreInOrder(node.Left, nodes);
-//       nodes.Add(node.Data);
-//       StoreInOrder(node.Right, nodes);
-//    }
-
-//    private Node? BuildAVLTree(List<int> nodes, int start, int end)
-//    {
-//       if (start > end)
-//          return null;
-
-//       int mid = (start + end) / 2;
-//       Node newNode = new Node(nodes[mid]);
-
-//       newNode.Left = BuildAVLTree(nodes, start, mid - 1);
-//       newNode.Right = BuildAVLTree(nodes, mid + 1, end);
-
-//       return newNode;
-//    }
-
-//    public void OptimizeTree()
-//    {
-//       List<int> sortedNodes = new List<int>();
-//       StoreInOrder(RootNode, sortedNodes);
-//       RootNode = BuildBalancedTree(sortedNodes, 0, sortedNodes.Count - 1);
-//    }
-
-//    private Node? BuildBalancedTree(List<int> nodes, int start, int end)
-//    {
-//       if (start > end)
-//          return null;
-
-//       int mid = (start + end) / 2;
-//       Node newNode = new Node(nodes[mid]);
-
-//       newNode.Left = BuildBalancedTree(nodes, start, mid - 1);
-//       newNode.Right = BuildBalancedTree(nodes, mid + 1, end);
-
-//       return newNode;
-//    }
-// }
-
-// public class Node
-// {
-//    public int Data { get; set; }
-//    public Node? Left { get; set; }
-//    public Node? Right { get; set; }
-
-//    public Node(int data)
-//    {
-//       Data = data;
-//       Left = null;
-//       Right = null;
-//    }
-// }
+         if (edge.RequiredIntelligence.HasValue && player.Intelligence < edge.RequiredIntelligence.Value)
+         {
+            return false;
+         }
+         return true;
+      }
+   }
+}
