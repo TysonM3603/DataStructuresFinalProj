@@ -37,10 +37,18 @@ public class GameRunner
       //Always start with these items
       inventory.AddItem(Sword, player);
       inventory.AddItem(HealthPotion, player);
+      inventory.AddNewItem("Lockpick", "Utility", 0, 0, 0, player);
+
+      //Generates randomized dungeon and creates challenge BST
+      StartGame();
    }
 
-   //TODO: Add dungeon making methods to control creation of the map
-   //TODO: Add Challenge BST methods to control the challenges inside each room of the map
+   public void StartGame()
+   {
+      dungeon.SetupDungeonRandomized();
+      BuildChallengeBST(15); //Number can be changed for more or less challenges
+   }
+
 
    public void DisplayPlayerStats(Player player)
    {
@@ -65,6 +73,41 @@ public class GameRunner
          _ => new Treasure("Dust", _ => Console.WriteLine("It's worthless..."))
       };
    }
+
+   public List<Challenge> GenerateChallenges(int count)
+   {
+      Random rng = new Random();
+      List<Challenge> challenges = new();
+
+      string[] types = { "Combat", "Puzzle", "Trap", "Magic" };
+      string[] stats = { "Strength", "Agility", "Intelligence" };
+      string[] items = { null, "Lockpick", "MagicKey", "Torch", "GrapplingHook" };
+
+      for (int i = 0; i < count; i++)
+      {
+         string type = types[rng.Next(types.Length)];
+         string requiredStat = stats[rng.Next(stats.Length)];
+         int difficulty = rng.Next(1, 100);
+         int requiredStatValue = rng.Next(1, 11);
+         string? requiredItem = items[rng.Next(items.Length)];
+
+         challenges.Add(new Challenge(type, difficulty, requiredStat, requiredStatValue, requiredItem));
+      }
+      return challenges;
+   }
+
+   public void BuildChallengeBST(int challengeCount)
+   {
+      var challenges = GenerateChallenges(challengeCount);
+
+      foreach (var challenge in challenges)
+      {
+         challengeTree.Insert(challenge);
+      }
+      Console.WriteLine($"Challenge BST built with {challengeCount} challenges.");
+   }
+
+
 
    public void PressAnyKeyToContinue()
    {

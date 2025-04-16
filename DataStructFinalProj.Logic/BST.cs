@@ -8,15 +8,15 @@ namespace DataStructFinalProj.Logic
       public string Type { get; set; }
       public int Difficulty { get; set; }
       public string RequiredStat { get; set; }
-      public int RequiredValue { get; set; }
+      public int RequiredStatValue { get; set; }
       public string? RequiredItem { get; set; }
 
-      public Challenge(string type, int difficulty, string requiredStat, int requiredValue, string? requiredItem = null)
+      public Challenge(string type, int difficulty, string requiredStat, int requiredStatValue, string? requiredItem = null)
       {
          Type = type;
          Difficulty = difficulty;
          RequiredStat = requiredStat;
-         RequiredValue = requiredValue;
+         RequiredStatValue = requiredStatValue;
          RequiredItem = requiredItem;
       }
    }
@@ -101,11 +101,11 @@ namespace DataStructFinalProj.Logic
          if (challenge.RequiredItem != null && !playerItems.Contains(challenge.RequiredItem))
          {
             Console.WriteLine("Missing required item!");
-            player.Health -= challenge.RequiredValue;
+            player.Health -= challenge.RequiredStatValue;
             return false;
          }
 
-         int playerValue = challenge.RequiredStat
+         int playerStatValue = challenge.RequiredStat
          switch
          {
             "Strength" => player.Strength,
@@ -114,7 +114,7 @@ namespace DataStructFinalProj.Logic
             _ => 0
          };
 
-         if (playerValue >= challenge.RequiredValue)
+         if (playerStatValue >= challenge.RequiredStatValue)
          {
             Console.WriteLine("Challenge succeeded!");
             DeleteNode(challenge.Difficulty);
@@ -124,7 +124,7 @@ namespace DataStructFinalProj.Logic
          }
          else
          {
-            int damage = challenge.RequiredValue - playerValue;
+            int damage = challenge.RequiredStatValue - playerStatValue;
             Console.WriteLine($"Challenge failed! Took {damage} damage.");
             player.Health -= damage;
             return false;
@@ -206,7 +206,7 @@ namespace DataStructFinalProj.Logic
              list[mid].Type,
              list[mid].Difficulty,
              list[mid].RequiredStat,
-             list[mid].RequiredValue,
+             list[mid].RequiredStatValue,
              list[mid].RequiredItem));
          node.Left = BuildBalancedTree(list, start, mid - 1);
          node.Right = BuildBalancedTree(list, mid + 1, end);
