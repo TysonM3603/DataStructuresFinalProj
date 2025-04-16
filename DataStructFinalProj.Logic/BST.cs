@@ -213,7 +213,7 @@ namespace DataStructFinalProj.Logic
          return node;
       }
 
-      public void TraverseDungeonWithChallenges(DungeonGraph dungeon, string startRoom, string exitRoom, Player player, Inventory playerItems)
+      public void TraverseDungeonWithChallenges(DungeonGraph dungeon, string startRoom, string exitRoom, Player player, Inventory playerItems, GameRunner runner)
       {
          Stack<string> pathStack = new Stack<string>();
          HashSet<string> visited = new HashSet<string>();
@@ -236,6 +236,14 @@ namespace DataStructFinalProj.Logic
                      Console.WriteLine($"Facing Challenge: {challenge.Type} | Difficulty {challenge.Difficulty}");
                      AttemptChallenge(challenge, player, playerItems);
                   }
+               }
+
+               // 10% chance to find treasure
+               if (new Random().Next(100) < 10)
+               {
+                  var treasure = runner.GenerateRandomTreasure();
+                  Console.WriteLine($"You found a treasure: {treasure.Name}!");
+                  runner.treasureStack.Push(treasure);
                }
 
                if (currentRoom == exitRoom)
@@ -262,9 +270,11 @@ namespace DataStructFinalProj.Logic
                pathStack.Pop();
             }
 
-            if (player.Health <= 0)
+            if (player.Health <= 0 || RoomChallengeMap.Count == 0)
             {
-               Console.WriteLine("Player has died in the dungeon.");
+               Console.WriteLine("Game Over!");
+               Console.WriteLine("Displaying path to the exit...");
+               dungeon.PrintPathToExit(startRoom, exitRoom);
                return;
             }
          }

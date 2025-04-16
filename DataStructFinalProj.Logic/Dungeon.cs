@@ -18,17 +18,6 @@ public class DungeonEdge
    }
 }
 
-public class TreasureStack
-{
-   public Stack<InventoryItem> treasureList { get; set; }
-   Random treasureChance = new Random();
-
-   public TreasureStack()
-   {
-      treasureList = new Stack<InventoryItem>();
-   }
-}
-
 public class DungeonGraph
 {
    public Dictionary<string, List<DungeonEdge>> Graph { get; set; }

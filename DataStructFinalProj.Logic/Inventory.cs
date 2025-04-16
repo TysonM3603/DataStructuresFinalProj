@@ -3,7 +3,7 @@ namespace DataStructFinalProj.Logic;
 public class Inventory
 {
    private Queue<InventoryItem> inventory = new Queue<InventoryItem>();
-   private Player player;
+   private Player player { get; set; }
 
    public Inventory(Player player)
    {
@@ -62,11 +62,23 @@ public class Inventory
       }
    }
 
+   public bool Contains(string item)
+   {
+      foreach (var i in inventory)
+      {
+         if (i.Name == item)
+         {
+            return true;
+         }
+      }
+      return false;
+   }
+
    public void InventoryStatCheck(Player player)
    {
-      player.Strength = 1;
-      player.Agility = 1;
-      player.Intelligence = 1;
+      player.Strength = 5;
+      player.Agility = 5;
+      player.Intelligence = 5;
 
       foreach (var i in inventory)
       {
