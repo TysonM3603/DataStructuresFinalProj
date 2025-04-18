@@ -55,7 +55,7 @@ public class Inventory
          return;
       }
 
-      Console.WriteLine("Inventory:");
+      Console.WriteLine("--Inventory--");
       foreach (var item in inventory)
       {
          Console.WriteLine($"- {item.Name}, Type: {item.Type}, Strength: {item.Strength}, Agility: {item.Agility}, Intelligence: {item.Intelligence}");

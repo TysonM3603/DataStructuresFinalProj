@@ -241,7 +241,7 @@ namespace DataStructFinalProj.Logic
                // 10% chance to find treasure
                if (new Random().Next(100) < 10)
                {
-                  var treasure = runner.GenerateRandomTreasure();
+                  InventoryItem treasure = runner.GenerateRandomTreasure();
                   Console.WriteLine($"You found a treasure: {treasure.Name}!");
                   runner.treasureStack.Push(treasure);
                }

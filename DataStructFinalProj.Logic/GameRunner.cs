@@ -6,7 +6,7 @@ public class GameRunner
    public Inventory inventory;
    public DungeonGraph dungeon;
    public BinarySearchTree challengeTree;
-   public Stack<Treasure> treasureStack;
+   public Stack<InventoryItem> treasureStack;
    private Random treasureRng;
    private InventoryItem Sword = new InventoryItem("Sword", "Combat", 1, 0, 0);
    private InventoryItem HealthPotion = new InventoryItem("Health Potion", "Potion", 0, 0, 0);
@@ -16,6 +16,7 @@ public class GameRunner
       {
          if (player.Health <= 0)
          {
+            player.Health = 0;
             return false;
          }
          else
@@ -31,7 +32,7 @@ public class GameRunner
       inventory = new Inventory(player);
       dungeon = new DungeonGraph();
       challengeTree = new BinarySearchTree();
-      treasureStack = new Stack<Treasure>();
+      treasureStack = new Stack<InventoryItem>();
       treasureRng = new Random();
 
       //Always start with these items
@@ -59,18 +60,18 @@ public class GameRunner
       Console.WriteLine($"Intelligence: {player.Intelligence}");
    }
 
-   public Treasure GenerateRandomTreasure()
+   public InventoryItem GenerateRandomTreasure()
    {
       string[] names = { "Gold Coin", "Ruby Gem", "Ancient Scroll", "Mystic Orb" };
       int roll = new Random().Next(names.Length);
 
       return names[roll] switch
       {
-         "Gold Coin" => new Treasure("Gold Coin", p => p.Health += 5),
-         "Ruby Gem" => new Treasure("Ruby Gem", p => p.Strength += 1),
-         "Ancient Scroll" => new Treasure("Ancient Scroll", p => p.Intelligence += 1),
-         "Mystic Orb" => new Treasure("Mystic Orb", p => p.Agility += 1),
-         _ => new Treasure("Dust", _ => Console.WriteLine("It's worthless..."))
+         "Gold Coin" => new InventoryItem("Gold Coin", "Health Boost", 0, 0, 0),
+         "Ruby Gem" => new InventoryItem("Ruby Gem", "Strength", 2, 0, 0),
+         "Ancient Scroll" => new InventoryItem("Ancient Scroll", "Intelligence", 0, 0, 2),
+         "Swiftness Boots" => new InventoryItem("Swiftness Boots", "Agility", 0, 2, 0),
+         _ => new InventoryItem("Dust", "Useless", 0, 0, 0)
       };
    }
 
@@ -106,8 +107,6 @@ public class GameRunner
       }
       Console.WriteLine($"Challenge BST built with {challengeCount} challenges.");
    }
-
-
 
    public void PressAnyKeyToContinue()
    {
