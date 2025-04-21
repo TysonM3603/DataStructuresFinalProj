@@ -14,4 +14,13 @@ public class Player
       this.Intelligence = intelligence;
       this.Health = health;
    }
+
+   public void DisplayPlayerStats()
+   {
+      Console.WriteLine("--Player Stats--");
+      Console.WriteLine($"Health: {Health}");
+      Console.WriteLine($"Strength: {Strength}");
+      Console.WriteLine($"Agility: {Agility}");
+      Console.WriteLine($"Intelligence: {Intelligence}");
+   }
 }

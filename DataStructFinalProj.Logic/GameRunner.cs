@@ -50,16 +50,6 @@ public class GameRunner
       BuildChallengeBST(15); //Number can be changed for more or less challenges
    }
 
-
-   public void DisplayPlayerStats(Player player)
-   {
-      Console.WriteLine("--Player Stats--");
-      Console.WriteLine($"Health: {player.Health}");
-      Console.WriteLine($"Strength: {player.Strength}");
-      Console.WriteLine($"Agility: {player.Agility}");
-      Console.WriteLine($"Intelligence: {player.Intelligence}");
-   }
-
    public InventoryItem GenerateRandomTreasure()
    {
       string[] names = { "Gold Coin", "Ruby Gem", "Ancient Scroll", "Mystic Orb" };
@@ -82,20 +72,24 @@ public class GameRunner
 
       string[] types = { "Combat", "Puzzle", "Trap", "Magic" };
       string[] stats = { "Strength", "Agility", "Intelligence" };
-      string[] items = { null, "Lockpick", "MagicKey", "Torch", "GrapplingHook" };
+      string[] items = { "Lockpick", "MagicKey", "Torch", "GrapplingHook" };
 
       for (int i = 0; i < count; i++)
       {
          string type = types[rng.Next(types.Length)];
          string requiredStat = stats[rng.Next(stats.Length)];
          int difficulty = rng.Next(1, 100);
-         int requiredStatValue = rng.Next(1, 11);
-         string? requiredItem = items[rng.Next(items.Length)];
+         int requiredValue = rng.Next(3, 11);
 
-         challenges.Add(new Challenge(type, difficulty, requiredStat, requiredStatValue, requiredItem));
+         // 80% stat-based, 20% item-based
+         bool useItem = rng.Next(100) < 20;
+         string? requiredItem = useItem ? items[rng.Next(items.Length)] : null;
+
+         challenges.Add(new Challenge(type, difficulty, requiredStat, requiredValue, requiredItem));
       }
       return challenges;
    }
+
 
    public void BuildChallengeBST(int challengeCount)
    {

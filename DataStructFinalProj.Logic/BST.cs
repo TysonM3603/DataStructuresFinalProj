@@ -102,6 +102,7 @@ namespace DataStructFinalProj.Logic
          {
             Console.WriteLine("Missing required item!");
             player.Health -= challenge.RequiredStatValue;
+            Console.WriteLine($"Challenge failed! Took {challenge.RequiredStatValue} damage.");
             return false;
          }
 
@@ -213,72 +214,169 @@ namespace DataStructFinalProj.Logic
          return node;
       }
 
-      public void TraverseDungeonWithChallenges(DungeonGraph dungeon, string startRoom, string exitRoom, Player player, Inventory playerItems, GameRunner runner)
+      public void TraverseInteractive(DungeonGraph dungeon, string startRoom, string exitRoom, Player player, Inventory inventory, GameRunner runner)
       {
-         Stack<string> pathStack = new Stack<string>();
-         HashSet<string> visited = new HashSet<string>();
+         string currentRoom = startRoom;
+         HashSet<string> visited = [currentRoom];
 
-         pathStack.Push(startRoom);
-
-         while (pathStack.Count > 0)
+         while (true)
          {
-            string currentRoom = pathStack.Peek();
-            if (!visited.Contains(currentRoom))
-            {
-               Console.WriteLine($"\nEntered Room {currentRoom}");
-               visited.Add(currentRoom);
+            Console.Clear();
+            Console.WriteLine($"You are in Room {currentRoom}.");
 
-               if (int.TryParse(currentRoom, out int roomNumber))
+            // Challenge phase
+            if (int.TryParse(currentRoom, out int roomNumber))
+            {
+               var challenge = FindClosestChallenge(roomNumber);
+               if (challenge != null)
                {
-                  var challenge = FindClosestChallenge(roomNumber);
-                  if (challenge != null)
+                  Console.WriteLine($"Facing Challenge: {challenge.Type} (Difficulty {challenge.Difficulty})");
+
+                  if (challenge.RequiredItem != null)
                   {
-                     Console.WriteLine($"Facing Challenge: {challenge.Type} | Difficulty {challenge.Difficulty}");
-                     AttemptChallenge(challenge, player, playerItems);
+                     bool hasItem = inventory.Contains(challenge.RequiredItem);
+                     Console.WriteLine($"- Requires item: {challenge.RequiredItem} | You {(hasItem ? "have" : "don't have")} it.");
+                  }
+                  else
+                  {
+                     int playerStatValue = challenge.RequiredStat
+                     switch
+                     {
+                        "Strength" => player.Strength,
+                        "Agility" => player.Agility,
+                        "Intelligence" => player.Intelligence,
+                        _ => 0
+                     };
+                     Console.WriteLine($"- Requires {challenge.RequiredStat} ≥ {challenge.RequiredStatValue} | You have: {playerStatValue}");
+                  }
+                  runner.PressAnyKeyToContinue();
+                  AttemptChallenge(challenge, player, inventory);
+
+                  // Early end if health or challenges run out
+                  if (player.Health <= 0 || RoomChallengeMap.Count == 0)
+                  {
+                     Console.Clear();
+                     Console.WriteLine("Game over! Player died or no more challenges remain.");
+                     dungeon.PrintPathToExit(currentRoom, exitRoom);
+                     return;
                   }
                }
-
-               // 10% chance to find treasure
-               if (new Random().Next(100) < 10)
-               {
-                  InventoryItem treasure = runner.GenerateRandomTreasure();
-                  Console.WriteLine($"You found a treasure: {treasure.Name}!");
-                  runner.treasureStack.Push(treasure);
-               }
-
-               if (currentRoom == exitRoom)
-               {
-                  Console.WriteLine("Exit found! Dungeon traversal complete.");
-                  return;
-               }
             }
 
-            bool moved = false;
-            foreach (var edge in dungeon.Graph[currentRoom])
+            // 10% chance to find treasure
+            if (new Random().Next(100) < 10)
             {
-               if (!visited.Contains(edge.Destination) && CanTraverseEdge(edge, player, playerItems))
-               {
-                  pathStack.Push(edge.Destination);
-                  moved = true;
-                  break;
-               }
+               var treasure = runner.GenerateRandomTreasure();
+               Console.WriteLine($"You found a treasure: {treasure.Name}!");
+               runner.treasureStack.Push(treasure);
             }
 
-            if (!moved)
+            // Reached exit
+            if (currentRoom == exitRoom && player.Health > 0)
             {
-               Console.WriteLine($"Dead end at Room {currentRoom}. Backtracking...");
-               pathStack.Pop();
-            }
-
-            if (player.Health <= 0 || RoomChallengeMap.Count == 0)
-            {
-               Console.WriteLine("Game Over!");
-               Console.WriteLine("Displaying path to the exit...");
-               dungeon.PrintPathToExit(startRoom, exitRoom);
+               Console.WriteLine("Congratulations! You've reached the exit!");
                return;
             }
+
+            // Console.Clear();
+            Console.WriteLine("\nWould you like to view your inventory and stats or use an item? (type 'view', 'use', or 'skip')");
+            string? action = Console.ReadLine()?.ToLower();
+
+            if (action == "view")
+            {
+               player.DisplayPlayerStats();
+               inventory.DisplayInventory();
+            }
+            else if (action == "use")
+            {
+               inventory.DisplayInventory();
+               Console.WriteLine("Enter the name of the item you want to use:");
+
+               string? itemName = Console.ReadLine();
+               if (string.IsNullOrWhiteSpace(itemName))
+               {
+                  Console.WriteLine("No item used.");
+               }
+               else
+               {
+                  var used = UseInventoryItem(itemName.Trim(), inventory, player);
+                  if (!used)
+                  {
+                     Console.WriteLine("Could not use item.");
+                  }
+               }
+            }
+            runner.PressAnyKeyToContinue();
+            Console.Clear();
+
+            // Show path options
+            Console.WriteLine("\nAvailable paths from this room:");
+
+            var availableEdges = dungeon.Graph[currentRoom];
+            for (int i = 0; i < availableEdges.Count; i++)
+            {
+               var edge = availableEdges[i];
+               string extra = "";
+
+               if (edge.RequiredItem != null)
+                  extra = $"Requires item: {edge.RequiredItem}";
+               else if (edge.RequiredStrength.HasValue)
+                  extra = $"Requires Strength ≥ {edge.RequiredStrength}";
+               else if (edge.RequiredAgility.HasValue)
+                  extra = $"Requires Agility ≥ {edge.RequiredAgility}";
+               else if (edge.RequiredIntelligence.HasValue)
+                  extra = $"Requires Intelligence ≥ {edge.RequiredIntelligence}";
+
+               Console.WriteLine($"{i + 1}: Room {edge.Destination} {(!string.IsNullOrEmpty(extra) ? $"| {extra}" : "")}");
+            }
+
+            // Prompt
+            Console.WriteLine("Enter the number of the room you want to move to:");
+            string? choice = Console.ReadLine();
+
+            if (int.TryParse(choice, out int selected) && selected >= 1 && selected <= availableEdges.Count)
+            {
+               var chosenEdge = availableEdges[selected - 1];
+               if (!CanTraverseEdge(chosenEdge, player, inventory))
+               {
+                  Console.WriteLine("\nYou fail to meet the path challenge!");
+                  if (chosenEdge.RequiredItem != null && !inventory.Contains(chosenEdge.RequiredItem))
+                  {
+                     Console.WriteLine($"You are missing required item: {chosenEdge.RequiredItem}");
+                  }
+                  else
+                  {
+                     if (chosenEdge.RequiredStrength.HasValue && player.Strength < chosenEdge.RequiredStrength)
+                        Console.WriteLine($"Strength too low! Need {chosenEdge.RequiredStrength}, you have {player.Strength}");
+                     if (chosenEdge.RequiredAgility.HasValue && player.Agility < chosenEdge.RequiredAgility)
+                        Console.WriteLine($"Agility too low! Need {chosenEdge.RequiredAgility}, you have {player.Agility}");
+                     if (chosenEdge.RequiredIntelligence.HasValue && player.Intelligence < chosenEdge.RequiredIntelligence)
+                        Console.WriteLine($"Intelligence too low! Need {chosenEdge.RequiredIntelligence}, you have {player.Intelligence}");
+                  }
+
+                  Console.WriteLine("You take 5 damage for attempting an invalid path.");
+                  player.Health -= 5;
+
+                  if (player.Health <= 0)
+                  {
+                     Console.WriteLine("You died while trying to force your way through...");
+                     dungeon.PrintPathToExit(currentRoom, exitRoom);
+                     return;
+                  }
+                  runner.PressAnyKeyToContinue();
+               }
+               else
+               {
+                  currentRoom = chosenEdge.Destination;
+                  visited.Add(currentRoom);
+               }
+            }
+            else
+            {
+               Console.WriteLine("Invalid input.");
+               runner.PressAnyKeyToContinue();
+            }
          }
-         Console.WriteLine("No path to exit found.");
       }
 
       private bool CanTraverseEdge(DungeonEdge edge, Player player, Inventory items)
@@ -304,5 +402,24 @@ namespace DataStructFinalProj.Logic
          }
          return true;
       }
+
+      private bool UseInventoryItem(string name, Inventory inventory, Player player)
+      {
+         //TODO: add usability for other items than just a health potion
+         if (name.ToLower() == "health potion" && inventory.Contains("Health Potion"))
+         {
+            player.Health += 10;
+            if (player.Health > 20)
+            {
+               player.Health = 20;
+            }
+            Console.WriteLine("You used a Health Potion and restored 10 health!");
+            inventory.ProcessNextItem(player);
+            return true;
+         }
+         Console.WriteLine("You can't use that item here.");
+         return false;
+      }
+
    }
 }

@@ -1,5 +1,6 @@
 ﻿using DataStructFinalProj.Logic;
 
+Console.Clear();
 //Initializing Dungeon and Welcome
 GameRunner game = new GameRunner();
 
@@ -11,15 +12,15 @@ game.dungeon.SetupDungeonRandomized();
 game.BuildChallengeBST(15);
 game.PressAnyKeyToContinue();
 
-game.DisplayPlayerStats(game.player);
+game.player.DisplayPlayerStats();
+Console.WriteLine();
 game.inventory.DisplayInventory();
 Console.WriteLine();
-
-Console.WriteLine("Press any key to begin your dungeon run.");
 game.PressAnyKeyToContinue();
 
 //Dungeon Loop
-game.challengeTree.TraverseDungeonWithChallenges(game.dungeon, "1", "15", game.player, game.inventory, game);
+game.challengeTree.TraverseInteractive(game.dungeon, "1", "15", game.player, game.inventory, game);
+
 
 //Post game summary
 Console.WriteLine("\nGame Over!");
