@@ -1,15 +1,11 @@
 ﻿using DataStructFinalProj.Logic;
 
 Console.Clear();
-//Initializing Dungeon and Welcome
-GameRunner game = new GameRunner();
-
 Console.WriteLine("Welcome to the Dungeon! We got fun and games!");
 Console.WriteLine();
 
-Console.WriteLine("Creating Dungeon...");
-game.dungeon.SetupDungeonRandomized();
-game.BuildChallengeBST(15);
+//Initializing Dungeon and Welcome
+GameRunner game = new GameRunner();
 game.PressAnyKeyToContinue();
 
 game.player.DisplayPlayerStats();

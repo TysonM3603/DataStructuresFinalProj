@@ -216,7 +216,9 @@ namespace DataStructFinalProj.Logic
 
       public void TraverseInteractive(DungeonGraph dungeon, string startRoom, string exitRoom, Player player, Inventory inventory, GameRunner runner)
       {
+         Stack<string> movementHistory = new();
          string currentRoom = startRoom;
+         movementHistory.Push(currentRoom);
          HashSet<string> visited = [currentRoom];
 
          while (true)
@@ -331,12 +333,31 @@ namespace DataStructFinalProj.Logic
             }
 
             // Prompt
-            Console.WriteLine("Enter the number of the room you want to move to:");
-            string? choice = Console.ReadLine();
+            Console.WriteLine("Enter the number of the room you want to move to, or type 'back' to return to the previous room:");
 
-            if (int.TryParse(choice, out int selected) && selected >= 1 && selected <= availableEdges.Count)
+            string? choice = Console.ReadLine()?.ToLower();
+
+            if (choice == "back")
+            {
+               if (movementHistory.Count > 1)
+               {
+                  movementHistory.Pop(); // remove current room
+                  currentRoom = movementHistory.Peek(); // go back
+                  Console.WriteLine($"You return to Room {currentRoom}.");
+                  runner.PressAnyKeyToContinue();
+                  continue;
+               }
+               else
+               {
+                  Console.WriteLine("You're at the starting room. You can't go back further.");
+                  runner.PressAnyKeyToContinue();
+                  continue;
+               }
+            }
+            else if (int.TryParse(choice, out int selected) && selected >= 1 && selected <= availableEdges.Count)
             {
                var chosenEdge = availableEdges[selected - 1];
+
                if (!CanTraverseEdge(chosenEdge, player, inventory))
                {
                   Console.WriteLine("\nYou fail to meet the path challenge!");
@@ -347,11 +368,17 @@ namespace DataStructFinalProj.Logic
                   else
                   {
                      if (chosenEdge.RequiredStrength.HasValue && player.Strength < chosenEdge.RequiredStrength)
+                     {
                         Console.WriteLine($"Strength too low! Need {chosenEdge.RequiredStrength}, you have {player.Strength}");
+                     }
                      if (chosenEdge.RequiredAgility.HasValue && player.Agility < chosenEdge.RequiredAgility)
+                     {
                         Console.WriteLine($"Agility too low! Need {chosenEdge.RequiredAgility}, you have {player.Agility}");
+                     }
                      if (chosenEdge.RequiredIntelligence.HasValue && player.Intelligence < chosenEdge.RequiredIntelligence)
+                     {
                         Console.WriteLine($"Intelligence too low! Need {chosenEdge.RequiredIntelligence}, you have {player.Intelligence}");
+                     }
                   }
 
                   Console.WriteLine("You take 5 damage for attempting an invalid path.");
@@ -359,7 +386,8 @@ namespace DataStructFinalProj.Logic
 
                   if (player.Health <= 0)
                   {
-                     Console.WriteLine("You died while trying to force your way through...");
+                     Console.Clear();
+                     Console.WriteLine("You died trying to force your way through...");
                      dungeon.PrintPathToExit(currentRoom, exitRoom);
                      return;
                   }
@@ -368,6 +396,7 @@ namespace DataStructFinalProj.Logic
                else
                {
                   currentRoom = chosenEdge.Destination;
+                  movementHistory.Push(currentRoom);
                   visited.Add(currentRoom);
                }
             }

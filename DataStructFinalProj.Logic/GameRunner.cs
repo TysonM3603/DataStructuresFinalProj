@@ -46,6 +46,7 @@ public class GameRunner
 
    public void StartGame()
    {
+      Console.WriteLine("Creating Dungeon...");
       dungeon.SetupDungeonRandomized();
       BuildChallengeBST(15); //Number can be changed for more or less challenges
    }
