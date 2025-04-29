@@ -10,7 +10,7 @@ namespace DataStructFinalProj.Logic
       public string RequiredStat { get; set; }
       public int RequiredStatValue { get; set; }
       public string? RequiredItem { get; set; }
-
+      public bool Seen { get; set; } = false;
       public Challenge(string type, int difficulty, string requiredStat, int requiredStatValue, string? requiredItem = null)
       {
          Type = type;
@@ -77,7 +77,7 @@ namespace DataStructFinalProj.Logic
             return closest;
          }
 
-         if (closest == null || Math.Abs(node.Challenge.Difficulty - target) < Math.Abs(closest.Difficulty - target))
+         if (!node.Challenge.Seen && (closest == null || Math.Abs(node.Challenge.Difficulty - target) < Math.Abs(closest.Difficulty - target)))
          {
             closest = node.Challenge;
          }
@@ -230,9 +230,10 @@ namespace DataStructFinalProj.Logic
             if (int.TryParse(currentRoom, out int roomNumber))
             {
                var challenge = FindClosestChallenge(roomNumber);
-               if (challenge != null)
+               if (new Random().Next(100) < 50 && challenge != null) // There is a 50% chance of a challenge happening when entering a room
                {
                   Console.WriteLine($"Facing Challenge: {challenge.Type} (Difficulty {challenge.Difficulty})");
+                  challenge.Seen = true;
 
                   if (challenge.RequiredItem != null)
                   {
@@ -263,6 +264,10 @@ namespace DataStructFinalProj.Logic
                      return;
                   }
                }
+               else
+               {
+                  Console.WriteLine("There is no challenge in this room.");
+               }
             }
 
             // 10% chance to find treasure
@@ -280,7 +285,6 @@ namespace DataStructFinalProj.Logic
                return;
             }
 
-            // Console.Clear();
             Console.WriteLine("\nWould you like to view your inventory and stats or use an item? (type 'view', 'use', or 'skip')");
             string? action = Console.ReadLine()?.ToLower();
 
@@ -357,47 +361,58 @@ namespace DataStructFinalProj.Logic
             else if (int.TryParse(choice, out int selected) && selected >= 1 && selected <= availableEdges.Count)
             {
                var chosenEdge = availableEdges[selected - 1];
-
-               if (!CanTraverseEdge(chosenEdge, player, inventory))
+               if (chosenEdge.HasBeenSeen == false)
                {
-                  Console.WriteLine("\nYou fail to meet the path challenge!");
-                  if (chosenEdge.RequiredItem != null && !inventory.Contains(chosenEdge.RequiredItem))
+                  chosenEdge.HasBeenSeen = true;
+
+                  if (!CanTraverseEdge(chosenEdge, player, inventory))
                   {
-                     Console.WriteLine($"You are missing required item: {chosenEdge.RequiredItem}");
+                     Console.WriteLine("\nYou fail to meet the path challenge!");
+
+                     if (chosenEdge.RequiredItem != null && !inventory.Contains(chosenEdge.RequiredItem))
+                     {
+                        Console.WriteLine($"You are missing required item: {chosenEdge.RequiredItem}");
+                     }
+                     else
+                     {
+                        if (chosenEdge.RequiredStrength.HasValue && player.Strength < chosenEdge.RequiredStrength)
+                        {
+                           Console.WriteLine($"Strength too low! Need {chosenEdge.RequiredStrength}, you have {player.Strength}");
+                        }
+                        if (chosenEdge.RequiredAgility.HasValue && player.Agility < chosenEdge.RequiredAgility)
+                        {
+                           Console.WriteLine($"Agility too low! Need {chosenEdge.RequiredAgility}, you have {player.Agility}");
+                        }
+                        if (chosenEdge.RequiredIntelligence.HasValue && player.Intelligence < chosenEdge.RequiredIntelligence)
+                        {
+                           Console.WriteLine($"Intelligence too low! Need {chosenEdge.RequiredIntelligence}, you have {player.Intelligence}");
+                        }
+                     }
+
+                     Console.WriteLine("You force your way through the path and take 3 damage!");
+                     player.Health -= 3;
+
+                     if (player.Health <= 0)
+                     {
+                        Console.WriteLine("You died while trying to force your way through...");
+                        dungeon.PrintPathToExit(currentRoom, exitRoom);
+                        return;
+                     }
+                     currentRoom = chosenEdge.Destination;
+                     movementHistory.Push(currentRoom);
+                     visited.Add(currentRoom);
+                     runner.PressAnyKeyToContinue();
                   }
                   else
                   {
-                     if (chosenEdge.RequiredStrength.HasValue && player.Strength < chosenEdge.RequiredStrength)
-                     {
-                        Console.WriteLine($"Strength too low! Need {chosenEdge.RequiredStrength}, you have {player.Strength}");
-                     }
-                     if (chosenEdge.RequiredAgility.HasValue && player.Agility < chosenEdge.RequiredAgility)
-                     {
-                        Console.WriteLine($"Agility too low! Need {chosenEdge.RequiredAgility}, you have {player.Agility}");
-                     }
-                     if (chosenEdge.RequiredIntelligence.HasValue && player.Intelligence < chosenEdge.RequiredIntelligence)
-                     {
-                        Console.WriteLine($"Intelligence too low! Need {chosenEdge.RequiredIntelligence}, you have {player.Intelligence}");
-                     }
+                     currentRoom = chosenEdge.Destination;
+                     movementHistory.Push(currentRoom);
+                     visited.Add(currentRoom);
                   }
-
-                  Console.WriteLine("You take 5 damage for attempting an invalid path.");
-                  player.Health -= 5;
-
-                  if (player.Health <= 0)
-                  {
-                     Console.Clear();
-                     Console.WriteLine("You died trying to force your way through...");
-                     dungeon.PrintPathToExit(currentRoom, exitRoom);
-                     return;
-                  }
-                  runner.PressAnyKeyToContinue();
                }
                else
                {
-                  currentRoom = chosenEdge.Destination;
-                  movementHistory.Push(currentRoom);
-                  visited.Add(currentRoom);
+                  Console.WriteLine("You already used this path. Proceeding...");
                }
             }
             else

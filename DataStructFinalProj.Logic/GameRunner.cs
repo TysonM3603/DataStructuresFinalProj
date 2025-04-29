@@ -36,9 +36,9 @@ public class GameRunner
       treasureRng = new Random();
 
       //Always start with these items
-      inventory.AddItem(Sword, player);
       inventory.AddItem(HealthPotion, player);
       inventory.AddNewItem("Lockpick", "Utility", 0, 0, 0, player);
+      inventory.AddItem(Sword, player);
 
       //Generates randomized dungeon and creates challenge BST
       StartGame();

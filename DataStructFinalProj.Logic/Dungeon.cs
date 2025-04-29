@@ -7,6 +7,7 @@ public class DungeonEdge
    public int? RequiredAgility { get; set; }
    public int? RequiredIntelligence { get; set; }
    public string? RequiredItem { get; set; }
+   public bool HasBeenSeen { get; set; } = false;
 
    public DungeonEdge(string dest, int? requiredStrength = null, int? requiredAgility = null, int? requiredIntelligence = null, string? requiredItem = null)
    {
@@ -83,7 +84,8 @@ public class DungeonGraph
 
       // Generate one guaranteed path (10–15 rooms long) to exit
       int pathLength = rng.Next(10, 16); // 10 to 15 rooms
-      List<string> path = Enumerable.Range(1, 15).Select(i => i.ToString()).OrderBy(x => rng.Next()).Take(pathLength).ToList();
+      List<string> allRooms = Enumerable.Range(2, 14).Select(i => i.ToString()).OrderBy(x => rng.Next()).Take(pathLength - 1).ToList();
+      List<string> path = ["1", .. allRooms]; // Always start from room 1
 
       for (int i = 0; i < path.Count - 1; i++)
       {

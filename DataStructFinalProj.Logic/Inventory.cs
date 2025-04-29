@@ -66,7 +66,7 @@ public class Inventory
    {
       foreach (var i in inventory)
       {
-         if (i.Name == item)
+         if (i.Name.ToLower() == item.ToLower())
          {
             return true;
          }
